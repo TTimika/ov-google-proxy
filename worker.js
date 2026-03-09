@@ -3,7 +3,7 @@
 // 
 // Version: v2.0.6 (2024-03-09)
 // Changelog:
-//   v2.0.6 - 自动获取域名，生成三种地图类型完整配置表格
+//   v2.0.6 - 自动获取域名，生成三种地图类型完整配置表格，新增实时测试地图
 //   v2.0.5 - 根路径直接返回 HTML 配置页面
 //   v2.0.4 - 简化界面为纯配置模板模式，移除复制和二维码功能
 //   v2.0.3 - 优化导入配置，使用验证成功的 URL 模板格式
@@ -79,7 +79,7 @@ async function handleProxyRequest(request) {
 }
 
 async function handleCopyConfig(request, workerHost) {
-  // 读取 public/index.html 内容（由客户端 JS 动态处理）
+  // 读取 public/index.html 内容（客户端 JS 动态处理）
   try {
     const html = \`<!DOCTYPE html>
 <html lang="zh-CN">
@@ -96,6 +96,13 @@ async function handleCopyConfig(request, workerHost) {
         .info-banner { background:#fff3cd; border-left:4px solid #ffc107; padding:15px; margin:20px 0; border-radius:4px; }
         .server-info { background:#e3f2fd; border:1px solid #2196f3; border-radius:6px; padding:15px; margin:20px 0; font-size:14px; }
         .server-info code { background:#f1f8ff; padding:2px 6px; border-radius:3px; color:#0366d6; }
+        .test-map-section { background:#f0fff4; border:2px solid #28a745; border-radius:8px; padding:20px; margin:25px 0; text-align:center; }
+        .test-map-title { font-weight:600; color:#28a745; font-size:16px; margin-bottom:15px; }
+        .test-map-img { border:2px solid #28a745; border-radius:4px; max-width:300px; height:auto; box-shadow:0 2px 8px rgba(40,167,69,0.2); }
+        .test-map-status { margin-top:10px; font-size:14px; }
+        .status-success { color:#28a745; font-weight:600; }
+        .status-error { color:#dc3545; font-weight:600; }
+        .test-map-hint { font-size:12px; color:#586069; margin-top:8px; }
         .config-grid { display:grid; gap:25px; margin:30px 0; }
         .config-card { background:#fafbfc; border:1px solid #dfe2e5; border-radius:8px; overflow:hidden; }
         .card-header { background:linear-gradient(135deg,#0366d6,#05a0fb); color:white; padding:15px 20px; font-weight:600; font-size:16px; display:flex; align-items:center; justify-content:space-between; }
@@ -120,13 +127,23 @@ async function handleCopyConfig(request, workerHost) {
         <span class="version">v2.0.6 (2024-03-09)</span>
         
         <div class="info-banner">
-            <strong>✅ 已验证可用 | 自动检测域名</strong><br>
+            <strong>✅ 已验证可用 | 自动检测域名 | 实时状态测试</strong><br>
             以下配置已根据您的 Worker 域名自动生成，直接复制即可使用。
         </div>
         
         <div class="server-info">
             <strong>🌐 当前服务器信息：</strong><br>
             Worker 域名：<code id="currentDomain">检测中...</code>
+        </div>
+
+        <!-- 测试地图区域 -->
+        <div class="test-map-section">
+            <div class="test-map-title">🧪 代理状态测试（x=1, y=1, z=1）</div>
+            <img id="testMapImg" class="test-map-img" alt="测试地图加载中..." src="">
+            <div class="test-map-status" id="testMapStatus">
+                <span class="status-error">⏳ 正在加载测试地图...</span>
+            </div>
+            <div class="test-map-hint">💡 如果看到世界地图缩略图，说明代理正常工作！</div>
         </div>
 
         <div class="config-grid">
@@ -173,9 +190,9 @@ async function handleCopyConfig(request, workerHost) {
         <div class="steps">
             <h3>🚀 三步导入配置</h3>
             <ol>
+                <li><strong>验证状态</strong>：确认上方测试地图正常显示</li>
                 <li><strong>选择配置</strong>：根据需要选择卫星/街道/混合图</li>
-                <li><strong>复制 XML</strong>：全选上方 XML 代码框内容并复制</li>
-                <li><strong>导入奥维</strong>：系统 → 导入对象 → 从文本导入 → 粘贴 → 确定</li>
+                <li><strong>导入奥维</strong>：全选 XML 代码 → 复制 → 系统 → 导入对象 → 从文本导入 → 粘贴 → 确定</li>
             </ol>
         </div>
 
@@ -184,16 +201,16 @@ async function handleCopyConfig(request, workerHost) {
         </div>
         
         <hr>
-        <footer><p>项目：<a href="https://github.com/miaouai/ov-google-proxy" target="_blank">github.com/miaouai/ov-google-proxy</a></p></footer>
+        <footer><p>项目：<a href="https://github.com/miaouai/ov-google-proxy" target="_blank">github.com/miaouai/ov-google-proxy</a></p><p>Version v2.0.6 | 自动检测域名 + 实时测试地图</p></footer>
     </div>
     <script>
-        const host = location.hostname;
-        document.getElementById('currentDomain').textContent = location.origin + " (" + host + ")";
+        const currentHost = location.hostname;
+        document.getElementById('currentDomain').textContent = location.origin + " (" + currentHost + ")";
         
-        function genXML(name,id,lyrs){return \`<?xml version="1.0" encoding="UTF-8"?>
+        function genXML(name,id,lyrs){return \\`<?xml version="1.0" encoding="UTF-8"?>
 <customMapSource>
-  <mapID>\${id}</mapID>
-  <name>\${name}</name>
+  <mapID>\\${id}</mapID>
+  <name>\\${name}</name>
   <version>0</version>
   <maxZoom>28</maxZoom>
   <coordType>Mercator</coordType>
@@ -201,17 +218,33 @@ async function handleCopyConfig(request, workerHost) {
   <tileFormat>JPG</tileFormat>
   <tileSize>256</tileSize>
   <protocol>https</protocol>
-  <host>\${host}</host>
+  <host>\\${currentHost}</host>
   <group>谷歌官方</group>
   <port>443</port>
-  <url>/vt/lyrs=\${lyrs}@699&hl=zh-CN&gl=cn&src=app&x={\$x}&y={\$y}&z={\$z}&s=</url>
-</customMapSource>\`;
+  <url>/vt/lyrs=\\${lyrs}@699&hl=zh-CN&gl=cn&src=app&x={\$x}&y={\$y}&z={\$z}&s=</url>
+</customMapSource>\\`;
 }
         document.getElementById('satXml').textContent = genXML('谷歌卫星','203','s');
         document.getElementById('roadXml').textContent = genXML('谷歌街道','204','m');
         document.getElementById('hybridXml').textContent = genXML('谷歌混合','205','y');
-        console.log('✅ v2.0.6 加载完成 - 域名:',host);
-    </script>
+        
+        // 实时测试地图
+        const testUrl = location.origin + "/vt/lyrs=s@699&hl=zh-CN&gl=cn&src=app&x=1&y=1&z=1&s=";
+        const testImg = document.getElementById('testMapImg');
+        const statusEl = document.getElementById('testMapStatus');
+        testImg.src = testUrl;
+        
+        testImg.onload = function() {
+            statusEl.innerHTML = '<span class="status-success">✅ 代理测试成功！地图正常显示</span>';
+            console.log('✅ v2.0.6 测试地图加载成功 - 域名:', currentHost);
+        };
+        testImg.onerror = function() {
+            statusEl.innerHTML = '<span class="status-error">❌ 代理测试失败！请检查 Worker</span>';
+            console.error('❌ v2.0.6 测试地图加载失败 - 域名:', currentHost);
+        };
+        
+        console.log('✅ v2.0.6 配置页面加载完成 - 域名:', currentHost);
+    <\/script>
 </body>
 </html>\`;
     
