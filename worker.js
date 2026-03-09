@@ -1,9 +1,10 @@
 // Cloudflare Worker for OviMap Google Map Proxy
 // 代理 mt1.google.com 的所有请求
 // 
-// Version: v2.0.4 (2024-03-09)
+// Version: v2.0.5 (2024-03-09)
 // Changelog:
 //   v2.0.2 - 修复 host 字段，去除 https:// 前缀；支持更多 URL 参数格式
+//   v2.0.5 - 根路径直接返回 HTML 配置页面
 //   v2.0.4 - 简化界面为纯配置模板模式，移除复制和二维码功能
 //   v2.0.3 - 优化导入配置，使用验证成功的 URL 模板格式
 //   v2.0.1 - 添加版本号标识，修复路由匹配逻辑
@@ -210,30 +211,19 @@ export default {
     const workerHost = url.origin;
     const pathname = url.pathname;
     
-    console.log(`[v2.0.1] Request: ${request.method} ${pathname}`);
+    console.log(`[v2.0.5] Request: ${request.method} ${pathname}`);
     
     // 🎯 地图瓦片代理 - 核心路由！优先级最高！
-    // 支持以下所有形式：
-    //   /vt?lyrs=m&x=1&y=1&z=1
-    //   /vt/?lyrs=m&x=1&y=1&z=1  
-    //   /maps/vt?lyrs=m&x=1&y=1&z=1
-    //   /mt1/vt?lyrs=m&x=1&y=1&z=1
+    // 只处理明确的路径：/vt、/maps、/mt1 开头的请求
     if (pathname.startsWith('/vt') || pathname.startsWith('/maps/') || pathname.startsWith('/mt1/')) {
-      console.log(`[v2.0.1] 命中代理路由，转发到 Google`);
+      console.log(`[v2.0.5] 命中代理路由，转发到 Google`);
       return handleProxyRequest(request);
     }
     
-    // 🎯 根路径 - 返回 XML 配置
-    if (pathname === '/' || pathname === '/config') {
-      return handleXMLConfig(request, workerHost);
-    }
-    
-    // 🎯 GUI 页面
-    if (pathname === '/copy' || pathname === '/gui') {
-      return handleCopyConfig(request, workerHost);
-    }
-    
-    // 🎯 默认返回 GUI 页面
+    // 🎯 根路径及所有其他路径 - 全部返回 HTML 配置页面
+    // ✅ / → HTML 配置页面
+    // ✅ /xxx → HTML 配置页面 (未定义路径也返回配置页)
+    console.log(`[v2.0.5] 返回 HTML 配置页面`);
     return handleCopyConfig(request, workerHost);
   }
 };
