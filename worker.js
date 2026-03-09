@@ -1,5 +1,5 @@
 // Cloudflare Worker for OviMap Google Map Proxy
-// 将 mt1.google.com 的请求代理到可访问的源
+// 代理 mt1.google.com 的所有请求
 
 const GOOGLE_MAP_URL = 'https://mt1.google.com';
 
@@ -18,36 +18,8 @@ const XML_CONFIG_TEMPLATE = `<?xml version="1.0" encoding="UTF-8"?>
   <host>{WORKER_HOST}</host>
   <group>谷歌官方</group>
   <port>443</port>
-  <url>/maps/vt?lyrs=m&x={$x}&y={$y}&z={$z}</url>
+  <url>/vt?lyrs=m&x={$x}&y={$y}&z={$z}</url>
 </customMapSource>`;
-
-// 奥维二维码参数解析
-function parseOvObjParams(queryString) {
-  const params = new URLSearchParams(queryString);
-  const result = {};
-  
-  for (const [key, value] of params.entries()) {
-    result[key] = value;
-  }
-  
-  return result;
-}
-
-// 解码 base64 参数 (如 hn 参数)
-function decodeBase64Param(param) {
-  try {
-    return atob(param);
-  } catch (e) {
-    return param;
-  }
-}
-
-// 生成奥维配置文件二维码
-function generateQRCode(data) {
-  // 使用 Google Charts API 生成二维码
-  const encodedData = encodeURIComponent(data);
-  return `https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=${encodedData}`;
-}
 
 async function handleXMLConfig(request, workerHost) {
   const xmlContent = XML_CONFIG_TEMPLATE.replace('{WORKER_HOST}', workerHost);
@@ -71,79 +43,21 @@ async function handleCopyConfig(request, workerHost) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>奥维地图 - Google 源配置</title>
   <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 40px 20px;
-      background: #f6f8fa;
-    }
-    .container {
-      background: white;
-      padding: 30px;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 800px; margin: 0 auto; padding: 40px 20px; background: #f6f8fa; }
+    .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
     h1 { color: #24292e; }
-    .config-box {
-      background: #f6f8fa;
-      padding: 20px;
-      border-radius: 6px;
-      margin: 20px 0;
-      position: relative;
-    }
-    textarea {
-      width: 100%;
-      height: 200px;
-      font-family: monospace;
-      font-size: 12px;
-      border: 1px solid #dfe2e5;
-      border-radius: 4px;
-      padding: 10px;
-      resize: vertical;
-    }
-    button {
-      background: #2ea44f;
-      color: white;
-      border: none;
-      padding: 12px 24px;
-      border-radius: 6px;
-      font-size: 16px;
-      cursor: pointer;
-      margin: 10px 5px;
-    }
+    .config-box { background: #f6f8fa; padding: 20px; border-radius: 6px; margin: 20px 0; position: relative; }
+    textarea { width: 100%; height: 200px; font-family: monospace; font-size: 12px; border: 1px solid #dfe2e5; border-radius: 4px; padding: 10px; resize: vertical; }
+    button { background: #2ea44f; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 16px; cursor: pointer; margin: 10px 5px; }
     button:hover { background: #2c974b; }
-    button.secondary {
-      background: #6a737d;
-    }
+    button.secondary { background: #6a737d; }
     button.secondary:hover { background: #5a6268; }
-    .qrcode-section {
-      text-align: center;
-      margin: 30px 0;
-      padding: 20px;
-      background: #fafbfc;
-      border-radius: 6px;
-    }
-    .qrcode-img {
-      max-width: 300px;
-      border: 2px solid #e1e4e8;
-      border-radius: 4px;
-    }
-    .info {
-      background: #fff3cd;
-      border: 1px solid #ffc107;
-      border-radius: 4px;
-      padding: 15px;
-      margin: 20px 0;
-    }
-    .success {
-      background: #d4edda;
-      border: 1px solid #28a745;
-      border-radius: 4px;
-      padding: 15px;
-      margin: 20px 0;
-      display: none;
-    }
+    .qrcode-section { text-align: center; margin: 30px 0; padding: 20px; background: #fafbfc; border-radius: 6px; }
+    .qrcode-img { max-width: 300px; border: 2px solid #e1e4e8; border-radius: 4px; }
+    .info { background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; padding: 15px; margin: 20px 0; }
+    .success { background: #d4edda; border: 1px solid #28a745; border-radius: 4px; padding: 15px; margin: 20px 0; display: none; }
+    .debug { background: #f1f8ff; border: 1px solid #2196f3; border-radius: 4px; padding: 15px; margin: 20px 0; font-size: 11px; font-family: monospace; white-space: pre-wrap; }
+    .map-types { background: #e3f2fd; border: 1px solid #2196f3; border-radius: 4px; padding: 15px; margin: 20px 0; }
   </style>
 </head>
 <body>
@@ -155,6 +69,15 @@ async function handleCopyConfig(request, workerHost) {
       1. 点击「复制配置」按钮复制 XML 配置<br>
       2. 在奥维地图中：系统设置 → 导入对象 → 选择 XML 文件或直接粘贴<br>
       3. 或者扫描二维码自动导入配置
+    </div>
+    
+    <div class="map-types">
+      <strong>📊 支持的地图类型 (已测试)：</strong><br>
+      • Google Hybrid (混合): lyrs=y<br>
+      • Google Satellite (卫星): lyrs=s<br>
+      • Google Road (街道): lyrs=m<br>
+      <br>
+      <em>💡 只需要把 mt1.google.com 替换为你的 Worker 域名即可！</em>
     </div>
     
     <div class="success" id="successMsg">✅ 配置已复制到剪贴板！</div>
@@ -173,13 +96,8 @@ async function handleCopyConfig(request, workerHost) {
       <h3>📱 扫码导入配置</h3>
       <img id="qrImage" class="qrcode-img" alt="配置二维码">
       <p><small>使用奥维地图扫码功能扫描此二维码</small></p>
+      <div class="debug" id="debugInfo" style="display:none"></div>
     </div>
-    
-    <hr style="margin: 40px 0; border: none; border-top: 1px solid #e1e4e8;">
-    
-    <h2>🔗 直接链接</h2>
-    <p><strong>配置地址：</strong><code>${workerHost}</code></p>
-    <p><strong>地图瓦片地址：</strong><code>${workerHost}/maps/vt?lyrys=m&x={x}&y={y}&z={z}</code></p>
     
     <script>
       function copyConfig() {
@@ -196,7 +114,30 @@ async function handleCopyConfig(request, workerHost) {
       }
       
       function showQRCode() {
-        const qrData = 'ovobj?t=37&id=202&na=6auY5b635Y2r5pif5Zu_&po=0&vr=1&pn=1&mt=1&mf=3&hs=1&he=4&oy=1&df=211,16777215,211,16777215&hn=${encodeURIComponent(workerHost)}&ul=L2FwcG1hcHRpbilee3N5bX0meT17JHl9Jno9eyR6fQ';
+        // 奥维二维码格式 - hn 和 ul 必须是 Base64 编码 (关键!)
+        var workerHost = '${workerHost}';
+        var hnBase64 = btoa(workerHost);  // Base64 编码 Worker 域名
+        var urlTemplate = '/vt?lyrs=m&x={$x}&y={$y}&z={$z}';
+        var ulBase64 = btoa(urlTemplate);  // Base64 编码 URL 模板
+        
+        console.log('=== QRCode Debug ===');
+        console.log('hn (原始):', workerHost);
+        console.log('hn (Base64):', hnBase64, '→ 解码:', atob(hnBase64));
+        console.log('ul (原始):', urlTemplate);
+        console.log('ul (Base64):', ulBase64, '→ 解码:', atob(ulBase64));
+        
+        const qrData = 'ovobj?t=37&id=202&na=6auY5b635Y2r5pif5Zu_&po=0&vr=1&pn=1&mt=1&mf=3&hs=1&he=4&oy=1&df=211,16777215,211,16777215&hn=' + hnBase64 + '&ul=' + ulBase64;
+        
+        document.getElementById('debugInfo').innerHTML = 
+          '调试信息:\\\\n' +
+          'Worker 地址：' + workerHost + '\\\\n' +
+          'hn (Base64): ' + hnBase64 + '\\\\n' +
+          '→ 解码验证：' + atob(hnBase64) + '\\\\n' +
+          'ul (Base64): ' + ulBase64 + '\\\\n' +
+          '→ 解码验证：' + atob(ulBase64) + '\\\\n\\\\n' +
+          '完整二维码数据：\\\\n' + qrData;
+        document.getElementById('debugInfo').style.display = 'block';
+        
         const qrUrl = 'https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=' + encodeURIComponent(qrData);
         document.getElementById('qrImage').src = qrUrl;
         document.getElementById('qrSection').style.display = 'block';
@@ -214,118 +155,57 @@ async function handleCopyConfig(request, workerHost) {
   });
 }
 
-async function handleQRCodeConfig(request, workerHost) {
-  // 解析二维码数据并生成页面
-  const url = new URL(request.url);
-  const data = url.searchParams.get('data');
-  
-  if (!data) {
-    return new Response('缺少二维码数据参数', { status: 400 });
-  }
-  
-  const decodedData = decodeURIComponent(data);
-  
-  const html = `<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>奥维地图 - 二维码配置</title>
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 40px 20px;
-      background: #f6f8fa;
-      text-align: center;
-    }
-    .container {
-      background: white;
-      padding: 30px;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    img {
-      max-width: 300px;
-      border: 2px solid #e1e4e8;
-      border-radius: 4px;
-    }
-    .info {
-      background: #e3f2fd;
-      border: 1px solid #2196f3;
-      border-radius: 4px;
-      padding: 15px;
-      margin: 20px 0;
-      text-align: left;
-    }
-    code {
-      background: #f6f8fa;
-      padding: 2px 6px;
-      border-radius: 3px;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>📱 奥维地图配置二维码</h1>
-    <img src="https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=${encodeURIComponent(decodedData)}" alt="配置二维码">
-    
-    <div class="info">
-      <strong>使用方法：</strong><br>
-      1. 打开奥维地图<br>
-      2. 点击「扫一扫」功能<br>
-      3. 扫描此二维码即可自动导入配置
-    </div>
-    
-    <h3>二维码数据：</h3>
-    <p><code>${decodedData}</code></p>
-  </div>
-</body>
-</html>`;
-  
-  return new Response(html, {
-    headers: {
-      'Content-Type': 'text/html; charset=utf-8'
-    }
-  });
-}
-
-async function handleProxyRequest(request, workerHost) {
+// ✅ 核心代理函数 - 支持所有 Google Maps 瓦片请求
+async function handleProxyRequest(request) {
   const url = new URL(request.url);
   
-  // 替换 Google 地图请求
-  let targetUrl = '';
+  // 支持 /vt/... 或 /mt1/vt/... 或直接 /vt?... 等多种路径
+  let targetPath = url.pathname;
+  let searchParams = url.search;
   
-  if (url.pathname.startsWith('/maps/vt')) {
-    // 地图瓦片请求
-    targetUrl = `${GOOGLE_MAP_URL}${url.pathname}${url.search}`;
-  } else if (url.pathname.startsWith('/mt1/')) {
-    // mt1 请求
-    targetUrl = `${GOOGLE_MAP_URL}${url.pathname}${url.search}`;
-  } else {
-    return new Response('Not found', { status: 404 });
+  // 标准化路径：移除可能的前缀
+  if (targetPath.startsWith('/maps/vt')) {
+    targetPath = targetPath.substring('/maps'.length);
+  } else if (targetPath.startsWith('/mt1/vt')) {
+    targetPath = targetPath.substring('/mt1'.length);
   }
+  
+  // 构建目标 URL
+  const targetUrl = `${GOOGLE_MAP_URL}${targetPath}${searchParams}`;
+  
+  console.log(`[Proxy] ${request.method} ${targetPath}${searchParams} -> ${targetUrl}`);
   
   try {
     const response = await fetch(targetUrl, {
       method: request.method,
       headers: {
-        'User-Agent': request.headers.get('User-Agent') || 'Mozilla/5.0',
-        'Referer': 'https://www.google.com/maps'
+        'User-Agent': request.headers.get('User-Agent') || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Referer': 'https://www.google.com/maps',
+        'Accept': '*/*',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Cache-Control': 'no-cache'
       }
     });
     
-    // 返回原始响应内容
+    console.log(`[Proxy] Response: ${response.status} ${response.headers.get('Content-Type')}`);
+    
+    // 复制重要响应头
+    const headers = new Headers();
+    headers.set('Content-Type', response.headers.get('Content-Type') || 'image/jpeg');
+    headers.set('Cache-Control', 'public, max-age=86400');  // 缓存 24 小时
+    headers.set('Access-Control-Allow-Origin', '*');
+    
+    if (response.headers.get('Expires')) {
+      headers.set('Expires', response.headers.get('Expires'));
+    }
+    
     return new Response(response.body, {
       status: response.status,
-      headers: {
-        'Content-Type': response.headers.get('Content-Type') || 'image/jpeg',
-        'Access-Control-Allow-Origin': '*'
-      }
+      headers: headers
     });
   } catch (error) {
-    return new Response(`Proxy error: ${error.message}`, { 
+    console.error('[Proxy Error]', error);
+    return new Response(\`Proxy error: \${error.message}\`, { 
       status: 502,
       headers: { 'Content-Type': 'text/plain' }
     });
@@ -336,31 +216,29 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const workerHost = url.origin;
-    
-    // 路由处理
     const pathname = url.pathname;
     
-    // 根路径 - 返回 XML 配置
+    // 🎯 根路径 - 返回 XML 配置
     if (pathname === '/' || pathname === '/config') {
       return handleXMLConfig(request, workerHost);
     }
     
-    // 复制配置页面
+    // 🎯 GUI 页面
     if (pathname === '/copy' || pathname === '/gui') {
       return handleCopyConfig(request, workerHost);
     }
     
-    // 二维码配置页面
-    if (pathname === '/qr') {
-      return handleQRCodeConfig(request, workerHost);
+    // 🎯 地图瓦片代理 - 核心路由！
+    // 支持以下所有形式：
+    //   /vt?lyrs=m&x=1&y=1&z=1
+    //   /vt/?lyrs=m&x=1&y=1&z=1  
+    //   /maps/vt?lyrs=m&x=1&y=1&z=1
+    //   /mt1/vt?lyrs=m&x=1&y=1&z=1
+    if (pathname.startsWith('/vt') || pathname.startsWith('/maps/') || pathname.startsWith('/mt1/')) {
+      return handleProxyRequest(request);
     }
     
-    // 地图瓦片代理
-    if (pathname.startsWith('/maps/') || pathname.startsWith('/mt1/')) {
-      return handleProxyRequest(request, workerHost);
-    }
-    
-    // 默认返回 GUI 页面
+    // 🎯 默认返回 GUI 页面
     return handleCopyConfig(request, workerHost);
   }
 };
