@@ -3,92 +3,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>奥维地图 Google 源配置 - v2.0.3</title>
+    <title>奥维地图 Google 源 - v2.0.4</title>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 900px; margin: 0 auto; padding: 40px 20px; background: #f6f8fa; }
-        .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        h1 { color: #24292e; }
-        .version { background: #0366d6; color: white; padding: 5px 10px; border-radius: 4px; font-size: 14px; }
-        .config-box { background: #f6f8fa; padding: 20px; border-radius: 6px; margin: 20px 0; font-family: monospace; font-size: 13px; white-space: pre-wrap; word-break: break-all; border: 1px solid #dfe2e5; }
-        button { background: #2ea44f; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 16px; cursor: pointer; margin: 10px 5px; }
-        button:hover { background: #2c974b; }
-        button.secondary { background: #6a737d; }
-        .qrcode-section { text-align: center; margin: 30px 0; padding: 20px; background: #fafbfc; border-radius: 6px; display: none; }
-        .qrcode-img { max-width: 300px; border: 2px solid #e1e4e8; border-radius: 4px; }
-        .info { background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; padding: 15px; margin: 20px 0; }
-        .success { background: #d4edda; border: 1px solid #28a745; border-radius: 4px; padding: 15px; margin: 20px 0; display: none; }
-        .step { background: #e3f2fd; border: 1px solid #2196f3; border-radius: 4px; padding: 15px; margin: 15px 0; }
-        .debug { background: #f1f8ff; border: 1px solid #2196f3; border-radius: 4px; padding: 15px; margin: 20px 0; font-size: 11px; font-family: monospace; white-space: pre-wrap; }
+        .container { background: white; padding: 40px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        h1 { color: #24292e; margin-bottom: 10px; }
+        .version { background: #0366d6; color: white; padding: 5px 12px; border-radius: 4px; font-size: 14px; display: inline-block; margin-bottom: 20px; }
+        .info-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; }
+        .success-box { background: #d4edda; border-left: 4px solid #28a745; padding: 15px; margin: 20px 0; }
+        .config-section { background: #f6f8fa; border: 2px solid #dfe2e5; border-radius: 6px; padding: 25px; margin: 20px 0; }
+        .config-title { font-weight: bold; color: #24292e; margin-bottom: 15px; font-size: 16px; }
+        .config-code { background: white; border: 1px solid #dfe2e5; border-radius: 4px; padding: 20px; font-family: 'Consolas', 'Monaco', monospace; font-size: 14px; line-height: 1.6; white-space: pre-wrap; word-break: break-all; overflow-x: auto; }
+        .step { background: #e3f2fd; border-radius: 6px; padding: 20px; margin: 20px 0; }
+        .step h3 { margin-top: 0; color: #0366d6; }
+        .step ol { margin: 10px 0; padding-left: 25px; }
+        .step li { margin: 8px 0; line-height: 1.6; }
+        code { background: #f6f8fa; padding: 2px 8px; border-radius: 3px; font-size: 13px; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px; }
+        th, td { border: 1px solid #dfe2e5; padding: 12px; text-align: left; }
+        th { background: #f6f8fa; font-weight: 600; width: 200px; }
+        .tip { background: #f1f8ff; border-left: 4px solid #2196f3; padding: 12px; margin: 15px 0; font-size: 14px; }
+        hr { border: none; border-top: 1px solid #e1e4e8; margin: 40px 0; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🗺️ 奥维地图 Google 源配置</h1>
-        <span class="version">v2.0.3 (2024-03-09)</span>
+        <span class="version">v2.0.4 (2024-03-09)</span>
         
-        <div class="info">
-            <strong>✨ 配置已优化：</strong><br>
-            • 自动检测并使用当前域名（去除协议前缀）<br>
-            • 支持卫星图、街道图、混合图<br>
-            • 参数格式：<code>/vt/lyrs=s@699&hl=zh-CN&gl=cn&src=app&x={$x}&y={$y}&z={$z}&s=</code>
+        <div class="info-box">
+            <strong>✅ 已验证可用</strong><br>
+            当前 Worker 域名：<code id="currentHost">-</code><br>
+            URL 模板格式：<code>/vt/lyrs=s@699&hl=zh-CN&gl=cn&src=app&x={$x}&y={$y}&z={$z}&s=</code>
         </div>
         
-        <div class="success" id="successMsg">✅ 配置已复制到剪贴板！</div>
-        
+        <!-- 第一步：复制配置 -->
         <div class="step">
-            <h3>📋 第一步：复制 XML 配置</h3>
-            <p>点击下方按钮复制完整配置：</p>
-            <button onclick="copyConfig()">📋 复制 XML 配置到剪贴板</button>
+            <h3>📋 第一步：复制下方 XML 配置</h3>
+            <p>点击下方配置框中的内容，全选并复制（Ctrl+C）：</p>
+            
+            <div class="config-section">
+                <div class="config-title">XML 配置文件：</div>
+                <div class="config-code" id="xmlConfig">Loading...</div>
+            </div>
         </div>
         
-        <div class="config-box" id="xmlConfig">Loading...</div>
-        
+        <!-- 第二步：导入到奥维地图 -->
         <div class="step">
-            <h3>📱 第二步：选择导入方式</h3>
-            <button class="secondary" onclick="showQRCode()">📱 生成二维码（手机扫码导入）</button>
-        </div>
-        
-        <div class="qrcode-section" id="qrSection">
-            <h3>📱 扫码导入配置</h3>
-            <img id="qrImage" class="qrcode-img" alt="配置二维码">
-            <p><small>打开奥维地图 → 扫一扫 → 扫描此二维码</small></p>
-            <div class="debug" id="debugInfo" style="display:none"></div>
-        </div>
-        
-        <div class="step">
-            <h3>🚀 第三步：在奥维地图中导入</h3>
+            <h3>🚀 第二步：导入到奥维地图</h3>
             <ol>
-                <li>打开奥维地图电脑版或手机版</li>
-                <li>点击 <strong>系统设置</strong> → <strong>导入对象</strong></li>
-                <li>选择 <strong>"从文本导入"</strong></li>
-                <li>粘贴刚才复制的 XML 配置</li>
-                <li>确认导入</li>
-                <li>在图层列表中找到 <strong>"谷歌街道"</strong> 并启用</li>
+                <li>打开奥维地图（电脑端或手机端）</li>
+                <li>点击顶部菜单 <strong>"系统"</strong> → <strong>"导入对象"</strong></li>
+                <li>在弹出的窗口中，选择 <strong>"从文本导入"</strong></li>
+                <li>粘贴刚才复制的完整 XML 配置内容</li>
+                <li>点击 <strong>"确定"</strong> 完成导入</li>
             </ol>
         </div>
         
-        <hr style="margin: 40px 0; border: none; border-top: 1px solid #e1e4e8;">
+        <!-- 第三步：启用图层 -->
+        <div class="step">
+            <h3>🌍 第三步：启用 Google 图层</h3>
+            <ol>
+                <li>导入成功后，在左侧图层列表中展开 <strong>"谷歌官方"</strong></li>
+                <li>勾选 <strong>"谷歌卫星"</strong> 启用卫星图</li>
+                <li>地图会自动切换到 Google 卫星底图</li>
+            </ol>
+            <div class="tip">
+                💡 提示：如果加载缓慢，可以右键点击图层 → <strong>"删除"</strong>，然后重新导入配置。
+            </div>
+        </div>
         
-        <h3>ℹ️ 技术信息</h3>
-        <table style="width:100%; font-size:14px;">
-            <tr><th width="200">服务器地址</th><td id="hostInfo">-</td></tr>
-            <tr><th>URL 模板</th><td><code>/vt/lyrs=s@699&amp;hl=zh-CN&amp;gl=cn&amp;src=app&amp;x={$x}&amp;y={$y}&amp;z={$z}&amp;s=</code></td></tr>
-            <tr><th>支持的 lyrs</th><td>m (街道), s (卫星), y (混合)</td></tr>
-            <tr><th>最大缩放级别</th><td>28</td></tr>
-            <tr><th>坐标系</th><td>Mercator (Web Mercator)</td></tr>
+        <hr>
+        
+        <!-- 技术信息表 -->
+        <h3>ℹ️ 技术详情</h3>
+        <table>
+            <tr>
+                <th>服务器地址</th>
+                <td id="serverUrl">-</td>
+            </tr>
+            <tr>
+                <th>URL 模板</th>
+                <td><code>/vt/lyrs=s@699&hl=zh-CN&gl=cn&src=app&x={$x}&y={$y}&z={$z}&s=</code></td>
+            </tr>
+            <tr>
+                <th>支持的 lyrs 参数</th>
+                <td>
+                    • <code>s</code> - 卫星图（默认）<br>
+                    • <code>m</code> - 街道图<br>
+                    • <code>y</code> - 混合图（街道 + 卫星）
+                </td>
+            </tr>
+            <tr>
+                <th>最大缩放级别</th>
+                <td>28</td>
+            </tr>
+            <tr>
+                <th>坐标系</th>
+                <td>Web Mercator (EPSG:3857)</td>
+            </tr>
+            <tr>
+                <th>瓦片尺寸</th>
+                <td>256 × 256 像素</td>
+            </tr>
         </table>
+        
+        <hr>
+        
+        <!-- 故障排除 -->
+        <h3>❓ 常见问题</h3>
+        
+        <div class="tip">
+            <strong>问题 1:</strong> 导入后显示"No Data"或空白？<br>
+            <strong>解决:</strong> 检查 <code>host</code> 字段是否填写正确（不应包含 https:// 前缀）
+        </div>
+        
+        <div class="tip">
+            <strong>问题 2:</strong> 地图加载很慢或超时？<br>
+            <strong>解决:</strong> Cloudflare Worker 有免费额度限制（10 万请求/月），如超量需更换域名或自建服务
+        </div>
+        
+        <div class="tip">
+            <strong>问题 3:</strong> 如何切换不同类型的地图？<br>
+            <strong>解决:</strong> 修改 XML 中 <code>&lt;url&gt;</code> 里的 <code>lyrs</code> 参数值即可
+        </div>
+        
+        <hr>
+        
+        <div class="success-box">
+            <strong>项目地址:</strong> <a href="https://github.com/miaouai/ov-google-proxy" target="_blank">https://github.com/miaouai/ov-google-proxy</a>
+        </div>
     </div>
 
     <script>
-        // ✅ 关键修复：获取纯主机名（不含协议）
+        // ✅ 提取纯主机名（不含协议）
         const fullUrl = window.location.origin;
         const urlObj = new URL(fullUrl);
-        const workerHost = urlObj.hostname;  // ✅ 只返回主机名，如 map.uiai.fun
+        const workerHost = urlObj.hostname;
         
-        // ✅ 使用用户验证成功的 URL 模板格式
+        // ✅ 使用已验证成功的 URL 模板
         const urlTemplate = '/vt/lyrs=s@699&hl=zh-CN&gl=cn&src=app&x={$x}&y={$y}&z={$z}&s=';
         
-        // XML 配置模板
+        // 完整的 XML 配置
         const xmlTemplate = `<?xml version="1.0" encoding="UTF-8"?>
 <customMapSource>
   <mapID>203</mapID>
@@ -106,59 +162,10 @@
   <url>${urlTemplate}</url>
 </customMapSource>`;
         
-        // 显示 XML 配置
+        // 显示配置
         document.getElementById('xmlConfig').textContent = xmlTemplate;
-        document.getElementById('hostInfo').textContent = `https://${workerHost}`;
-        
-        // 复制配置
-        function copyConfig() {
-            navigator.clipboard.writeText(xmlTemplate).then(() => {
-                document.getElementById('successMsg').style.display = 'block';
-                setTimeout(() => {
-                    document.getElementById('successMsg').style.display = 'none';
-                }, 3000);
-            }).catch(err => {
-                alert('复制失败，请手动复制');
-                console.error(err);
-            });
-        }
-        
-        // 显示二维码
-        function showQRCode() {
-            try {
-                // 奥维二维码格式 - Base64 编码
-                const hnBase64 = btoa(workerHost);
-                const ulBase64 = btoa(urlTemplate);
-                
-                const qrData = `ovobj?t=37&id=202&na=6auY5b635Y2r5pif5Zu_&po=0&vr=1&pn=1&mt=1&mf=3&hs=1&he=4&oy=1&df=211,16777215,211,16777215&hn=${hnBase64}&ul=${ulBase64}`;
-                
-                console.log('=== QRCode Debug ===');
-                console.log('Worker Host:', workerHost);
-                console.log('hn (Base64):', hnBase64, '→ atob:', atob(hnBase64));
-                console.log('ul (Base64):', ulBase64, '→ atob:', atob(ulBase64));
-                console.log('Full QR Data:', qrData);
-                
-                // 显示调试信息
-                document.getElementById('debugInfo').innerHTML = 
-                    '调试信息:\n' +
-                    'Worker 地址: ' + workerHost + '\n' +
-                    'hn (Base64): ' + hnBase64 + '\n' +
-                    '→ 解码: ' + atob(hnBase64) + '\n' +
-                    'ul (Base64): ' + ulBase64 + '\n' +
-                    '→ 解码: ' + atob(ulBase64) + '\n\n' +
-                    '完整二维码数据:\n' + qrData;
-                document.getElementById('debugInfo').style.display = 'block';
-                
-                const qrUrl = `https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=${encodeURIComponent(qrData)}`;
-                document.getElementById('qrImage').src = qrUrl;
-                document.getElementById('qrSection').style.display = 'block';
-                
-                alert('✅ 二维码已生成！\n\n请在控制台 (F12) 查看详细参数\n打开手机奥维地图扫码即可导入');
-            } catch (err) {
-                alert('❌ 生成失败：' + err.message);
-                console.error(err);
-            }
-        }
+        document.getElementById('currentHost').textContent = `https://${workerHost}`;
+        document.getElementById('serverUrl').innerHTML = `<a href="https://${workerHost}" target="_blank">https://${workerHost}</a>`;
     </script>
 </body>
 </html>

@@ -1,9 +1,10 @@
 // Cloudflare Worker for OviMap Google Map Proxy
 // 代理 mt1.google.com 的所有请求
 // 
-// Version: v2.0.2 (2024-03-09)
+// Version: v2.0.4 (2024-03-09)
 // Changelog:
 //   v2.0.2 - 修复 host 字段，去除 https:// 前缀；支持更多 URL 参数格式
+//   v2.0.4 - 简化界面为纯配置模板模式，移除复制和二维码功能
 //   v2.0.3 - 优化导入配置，使用验证成功的 URL 模板格式
 //   v2.0.1 - 添加版本号标识，修复路由匹配逻辑
 //   v2.0.0 - 修复代理路径 (/vt), Base64 编码二维码，支持三种地图源
@@ -45,113 +46,96 @@ async function handleXMLConfig(request, workerHost) {
 }
 
 async function handleCopyConfig(request, workerHost) {
-  const xmlContent = XML_CONFIG_TEMPLATE.replace('{WORKER_HOST}', workerHost);
+  // 提取纯主机名
+  const url = new URL(workerHost);
+  const hostOnly = url.hostname;
   
-  // 返回带复制功能的 HTML
+  // 使用已验证的 URL 模板
+  const urlTemplate = '/vt/lyrs=s@699&hl=zh-CN&gl=cn&src=app&x={$x}&y={$y}&z={$z}&s=';
+  
+  // 生成完整 HTML（内联 JS 处理动态内容）
   const html = `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>奥维地图 - Google 源配置</title>
+  <title>奥维地图 Google 源配置 - v2.0.4</title>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 800px; margin: 0 auto; padding: 40px 20px; background: #f6f8fa; }
-    .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-    h1 { color: #24292e; }
-    .config-box { background: #f6f8fa; padding: 20px; border-radius: 6px; margin: 20px 0; position: relative; }
-    textarea { width: 100%; height: 200px; font-family: monospace; font-size: 12px; border: 1px solid #dfe2e5; border-radius: 4px; padding: 10px; resize: vertical; }
-    button { background: #2ea44f; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 16px; cursor: pointer; margin: 10px 5px; }
-    button:hover { background: #2c974b; }
-    button.secondary { background: #6a737d; }
-    button.secondary:hover { background: #5a6268; }
-    .qrcode-section { text-align: center; margin: 30px 0; padding: 20px; background: #fafbfc; border-radius: 6px; }
-    .qrcode-img { max-width: 300px; border: 2px solid #e1e4e8; border-radius: 4px; }
-    .info { background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; padding: 15px; margin: 20px 0; }
-    .success { background: #d4edda; border: 1px solid #28a745; border-radius: 4px; padding: 15px; margin: 20px 0; display: none; }
-    .debug { background: #f1f8ff; border: 1px solid #2196f3; border-radius: 4px; padding: 15px; margin: 20px 0; font-size: 11px; font-family: monospace; white-space: pre-wrap; }
-    .map-types { background: #e3f2fd; border: 1px solid #2196f3; border-radius: 4px; padding: 15px; margin: 20px 0; }
+    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;max-width:900px;margin:0 auto;padding:40px 20px;background:#f6f8fa}
+    .container{background:white;padding:40px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+    h1{color:#24292e;margin-bottom:10px}
+    .version{background:#0366d6;color:white;padding:5px 12px;border-radius:4px;font-size:14px;display:inline-block;margin-bottom:20px}
+    .info-box{background:#fff3cd;border-left:4px solid #ffc107;padding:15px;margin:20px 0}
+    .config-section{background:#f6f8fa;border:2px solid #dfe2e5;border-radius:6px;padding:25px;margin:20px 0}
+    .config-title{font-weight:bold;color:#24292e;margin-bottom:15px;font-size:16px}
+    .config-code{background:white;border:1px solid #dfe2e5;border-radius:4px;padding:20px;font-family:"Consolas","Monaco",monospace;font-size:14px;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+    .step{background:#e3f2fd;border-radius:6px;padding:20px;margin:20px 0}
+    .step h3{margin-top:0;color:#0366d6}
+    code{background:#f6f8fa;padding:2px 8px;border-radius:3px;font-size:13px}
+    table{width:100%;border-collapse:collapse;margin:20px 0;font-size:14px}
+    th,td{border:1px solid #dfe2e5;padding:12px;text-align:left}
+    th{background:#f6f8fa;font-weight:600;width:200px}
+    .tip{background:#f1f8ff;border-left:4px solid #2196f3;padding:12px;margin:15px 0}
+    hr{border:none;border-top:1px solid #e1e4e8;margin:40px 0}
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>🗺️ 奥维地图 - Google 地图源配置</h1>
+    <h1>🗺️ 奥维地图 Google 源配置</h1>
+    <span class="version">v2.0.4 (2024-03-09)</span>
     
-    <div class="info">
-      <strong>使用说明：</strong><br>
-      1. 点击「复制配置」按钮复制 XML 配置<br>
-      2. 在奥维地图中：系统设置 → 导入对象 → 选择 XML 文件或直接粘贴<br>
-      3. 或者扫描二维码自动导入配置
+    <div class="info-box">
+      <strong>✅ 已验证可用</strong><br>
+      当前 Worker 域名：<code id="currentHost">-</code><br>
+      URL 模板：<code>/vt/lyrs=s@699&hl=zh-CN&gl=cn&src=app&x=\{$x\}&y=\{$y\}&z=\{$z\}&s=</code>
     </div>
     
-    <div class="map-types">
-      <strong>📊 支持的地图类型 (已测试)：</strong><br>
-      • Google Hybrid (混合): lyrs=y<br>
-      • Google Satellite (卫星): lyrs=s<br>
-      • Google Road (街道): lyrs=m<br>
-      <br>
-      <em>💡 只需要把 mt1.google.com 替换为你的 Worker 域名即可！</em>
+    <div class="config-section">
+      <div class="config-title">XML 配置文件：</div>
+      <div class="config-code" id="xmlConfig"></div>
     </div>
     
-    <div class="success" id="successMsg">✅ 配置已复制到剪贴板！</div>
-    
-    <h2>XML 配置文件</h2>
-    <div class="config-box">
-      <textarea id="configText">${xmlContent}</textarea>
+    <div class="step">
+      <h3>🚀 导入步骤</h3>
+      <ol>
+        <li>全选上方 XML 配置并复制</li>
+        <li>打开奥维地图 → 系统 → 导入对象</li>
+        <li>选择"从文本导入"</li>
+        <li>粘贴配置并确定</li>
+        <li>在图层列表启用"谷歌卫星"</li>
+      </ol>
     </div>
     
-    <div style="text-align: center;">
-      <button onclick="copyConfig()">📋 复制配置到剪贴板</button>
-      <button class="secondary" onclick="showQRCode()">📱 显示二维码</button>
-    </div>
-    
-    <div class="qrcode-section" id="qrSection" style="display: none;">
-      <h3>📱 扫码导入配置</h3>
-      <img id="qrImage" class="qrcode-img" alt="配置二维码">
-      <p><small>使用奥维地图扫码功能扫描此二维码</small></p>
-      <div class="debug" id="debugInfo" style="display:none"></div>
-    </div>
-    
-    <script>
-      function copyConfig() {
-        const text = document.getElementById('configText').value;
-        navigator.clipboard.writeText(text).then(() => {
-          document.getElementById('successMsg').style.display = 'block';
-          setTimeout(() => {
-            document.getElementById('successMsg').style.display = 'none';
-          }, 3000);
-        }).catch(err => {
-          alert('复制失败，请手动复制');
-          console.error(err);
-        });
-      }
-      
-      function showQRCode() {
-        // ✅ 使用验证成功的 URL 模板格式
-        var workerHost = '${workerHost}'.replace('https://', '').replace('http://', '').split(':')[0];  // 只保留主机名
-        var urlTemplate = '/vt/lyrs=s@699&hl=zh-CN&gl=cn&src=app&x={$x}&y={$y}&z={$z}&s=';
-        
-        console.log('=== QRCode Debug v2.0.3 ===');
-        console.log('Worker Host:', workerHost);
-        console.log('URL Template:', urlTemplate);
-        
-        const qrData = 'ovobj?t=37&id=202&na=6auY5b635Y2r5pif5Zu_&po=0&vr=1&pn=1&mt=1&mf=3&hs=1&he=4&oy=1&df=211,16777215,211,16777215&hn=' + hnBase64 + '&ul=' + ulBase64;
-        
-        document.getElementById('debugInfo').innerHTML = 
-          '调试信息:\\\\n' +
-          'Worker 地址：' + workerHost + '\\\\n' +
-          'hn (Base64): ' + hnBase64 + '\\\\n' +
-          '→ 解码验证：' + atob(hnBase64) + '\\\\n' +
-          'ul (Base64): ' + ulBase64 + '\\\\n' +
-          '→ 解码验证：' + atob(ulBase64) + '\\\\n\\\\n' +
-          '完整二维码数据：\\\\n' + qrData;
-        document.getElementById('debugInfo').style.display = 'block';
-        
-        const qrUrl = 'https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=' + encodeURIComponent(qrData);
-        document.getElementById('qrImage').src = qrUrl;
-        document.getElementById('qrSection').style.display = 'block';
-      }
-    </script>
+    <hr>
+    <table>
+      <tr><th>服务器</th><td id="serverUrl"></td></tr>
+      <tr><th>URL 模板</th><td><code>/vt/lyrs=s@699&hl=zh-CN&gl=cn&src=app&x=\{$x\}&y=\{$y\}&z=\{$z\}&s=</code></td></tr>
+      <tr><th>最大缩放</th><td>28</td></tr>
+    </table>
   </div>
+  <script>
+    const host = location.hostname;
+    const tmpl = "/vt/lyrs=s@699&hl=zh-CN&gl=cn&src=app&x={\$x}&y={\$y}&z={\$z}&s=";
+    const xml = \`<?xml version="1.0" encoding="UTF-8"?>
+<customMapSource>
+  <mapID>203</mapID>
+  <name>谷歌卫星</name>
+  <version>0</version>
+  <maxZoom>28</maxZoom>
+  <coordType>Mercator</coordType>
+  <tileType>Satellite</tileType>
+  <tileFormat>JPG</tileFormat>
+  <tileSize>256</tileSize>
+  <protocol>https</protocol>
+  <host>\${host}</host>
+  <group>谷歌官方</group>
+  <port>443</port>
+  <url>\${tmpl}</url>
+</customMapSource>\`;
+    document.getElementById('xmlConfig').textContent = xml;
+    document.getElementById('currentHost').textContent = "https://" + host;
+    document.getElementById('serverUrl').innerHTML = "<a href="https://" + host + "" target="_blank">https://" + host + "</a>";
+  <\/script>
 </body>
 </html>`;
   
