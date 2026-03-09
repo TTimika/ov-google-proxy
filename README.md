@@ -1,4 +1,4 @@
-# 🗺️ 奥维地图 Google 源代理 v2.0.6
+# 🗺️ 奥维地图 Google 源代理 v2.0.7
 
 Cloudflare Worker 代理服务，解决 `mt1.google.com` 无法访问的问题。
 
