@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>奥维地图 Google 源代理</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;line-height:1.6;color:#24292e;max-width:900px;margin:0 auto;padding:40px 20px;background:#f6f8fa}
+        .markdown-body{background:white;padding:45px;border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,0.12)}
+        h1,h2,h3{margin-top:24px;margin-bottom:16px;font-weight:600}
+        h1{border-bottom:1px solid #eaecef;padding-bottom:.3em}
+        code{background:rgba(27,31,35,0.05);padding:0.2em 0.4em;border-radius:3px}
+        pre{background:#f6f8fa;padding:16px;border-radius:6px;overflow-x:auto}
+        a{color:#0366d6}
+        table{border-collapse:collapse;width:100%;margin:16px 0}
+        th,td{border:1px solid #dfe2e5;padding:8px 12px;text-align:left}
+        th{background:#f6f8fa}
+        .config-box{background:#f6f8fa;padding:20px;border-radius:6px;margin:20px 0;font-family:monospace;font-size:12px;white-space:pre-wrap;word-break:break-all}
+        .btn{display:inline-block;padding:8px 16px;background:#2ea44f;color:white;border:none;border-radius:6px;text-decoration:none;cursor:pointer;margin:5px}
+        .btn:hover{background:#2c974b}
+        .qrcode{text-align:center;margin:30px 0}
+        .qrcode img{border:2px solid #e1e4e8;border-radius:4px}
+        .info{background:#fff3cd;border:1px solid #ffc107;border-radius:4px;padding:15px;margin:20px 0}
+        .success{background:#d4edda;border:1px solid #28a745;border-radius:4px;padding:15px;margin:20px 0;display:none}
+    </style>
+</head>
+<body>
+    <div class="markdown-body" id="readme"></div>
+    <div class="success" id="successMsg">✅ 配置已复制到剪贴板！</div>
+    
+    <div style="text-align: center; margin: 30px 0;">
+        <button class="btn" onclick="copyConfig()">📋 复制 XML 配置</button>
+        <button class="btn" style="background:#6a737d" onclick="showQRCode()">📱 显示二维码</button>
+    </div>
+    
+    <div class="config-box" id="xmlConfig">
+Loading...
+    </div>
+    
+    <div class="qrcode" id="qrSection" style="display: none;">
+        <h2>📱 扫码导入配置</h2>
+        <img id="qrImage" alt="配置二维码">
+        <p><small>使用奥维地图扫码功能扫描此二维码</small></p>
+    </div>
+
+    <script>
+        // 获取当前 Worker 域名
+        const workerHost = window.location.origin;
+        
+        // XML 配置模板
+        const xmlTemplate = `<?xml version="1.0" encoding="UTF-8"?>
+<customMapSource>
+  <mapID>203</mapID>
+  <name>谷歌街道</name>
+  <version>0</version>
+  <maxZoom>28</maxZoom>
+  <coordType>Mercator</coordType>
+  <tileType>Satellite</tileType>
+  <tileFormat>JPG</tileFormat>
+  <tileSize>256</tileSize>
+  <protocol>https</protocol>
+  <host>${workerHost}</host>
+  <group>谷歌官方</group>
+  <port>443</port>
+  <url>/maps/vt?lyrs=m&x={$x}&y={$y}&z={$z}</url>
+</customMapSource>`;
+        
+        // 显示 XML 配置
+        document.getElementById('xmlConfig').textContent = xmlTemplate;
+        
+        // 读取 README.md
+        fetch('README.md').then(r=>r.text()).then(md=>{
+            document.getElementById('readme').innerHTML = marked.parse(md);
+        }).catch(err => {
+            document.getElementById('readme').innerHTML = '<h1>奥维地图 Google 源代理</h1><p>Cloudflare Worker 代理服务，解决 mt1.google.com 无法访问的问题。</p>';
+        });
+        
+        // 复制配置
+        function copyConfig() {
+            const text = xmlTemplate;
+            navigator.clipboard.writeText(text).then(() => {
+                document.getElementById('successMsg').style.display = 'block';
+                setTimeout(() => {
+                    document.getElementById('successMsg').style.display = 'none';
+                }, 3000);
+            }).catch(err => {
+                alert('复制失败，请手动复制');
+                console.error(err);
+            });
+        }
+        
+        // 显示二维码
+        function showQRCode() {
+            // 奥维二维码格式
+            const qrData = `ovobj?t=37&id=202&na=6auY5b635Y2r5pif5Zu_&po=0&vr=1&pn=1&mt=1&mf=3&hs=1&he=4&oy=1&df=211,16777215,211,16777215&hn=${encodeURIComponent(workerHost)}&ul=L2FwcG1hcHRpbilee3N5bX0meT17JHl9Jno9eyR6fQ`;
+            const qrUrl = `https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=${encodeURIComponent(qrData)}`;
+            document.getElementById('qrImage').src = qrUrl;
+            document.getElementById('qrSection').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
