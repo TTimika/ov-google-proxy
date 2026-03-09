@@ -1,8 +1,10 @@
 // Cloudflare Worker for OviMap Google Map Proxy
 // 代理 mt1.google.com 的所有请求
 // 
-// Version: v2.0.1 (2024-03-09)
+// Version: v2.0.2 (2024-03-09)
 // Changelog:
+//   v2.0.2 - 修复 host 字段，去除 https:// 前缀；支持更多 URL 参数格式
+//   v2.0.3 - 优化导入配置，使用验证成功的 URL 模板格式
 //   v2.0.1 - 添加版本号标识，修复路由匹配逻辑
 //   v2.0.0 - 修复代理路径 (/vt), Base64 编码二维码，支持三种地图源
 //   v1.0.0 - 初始版本
@@ -24,11 +26,15 @@ const XML_CONFIG_TEMPLATE = `<?xml version="1.0" encoding="UTF-8"?>
   <host>{WORKER_HOST}</host>
   <group>谷歌官方</group>
   <port>443</port>
-  <url>/vt?lyrs=m&x={$x}&y={$y}&z={$z}</url>
+  <url>/vt/lyrs=s@699&hl=zh-CN&gl=cn&src=app&x={$x}&y={$y}&z={$z}&s=</url>
 </customMapSource>`;
 
 async function handleXMLConfig(request, workerHost) {
-  const xmlContent = XML_CONFIG_TEMPLATE.replace('{WORKER_HOST}', workerHost);
+  // 从完整 URL 中提取纯主机名 (去除协议和端口)
+  const url = new URL(workerHost);
+  const hostOnly = url.hostname;  // ✅ 只返回域名部分
+  
+  const xmlContent = XML_CONFIG_TEMPLATE.replace('{WORKER_HOST}', hostOnly);
   
   return new Response(xmlContent, {
     headers: {

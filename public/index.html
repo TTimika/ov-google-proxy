@@ -3,59 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>奥维地图 Google 源代理</title>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <title>奥维地图 Google 源配置 - v2.0.3</title>
     <style>
-        body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;line-height:1.6;color:#24292e;max-width:900px;margin:0 auto;padding:40px 20px;background:#f6f8fa}
-        .markdown-body{background:white;padding:45px;border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,0.12)}
-        h1,h2,h3{margin-top:24px;margin-bottom:16px;font-weight:600}
-        h1{border-bottom:1px solid #eaecef;padding-bottom:.3em}
-        code{background:rgba(27,31,35,0.05);padding:0.2em 0.4em;border-radius:3px}
-        pre{background:#f6f8fa;padding:16px;border-radius:6px;overflow-x:auto;font-size:11px}
-        a{color:#0366d6}
-        table{border-collapse:collapse;width:100%;margin:16px 0}
-        th,td{border:1px solid #dfe2e5;padding:8px 12px;text-align:left}
-        th{background:#f6f8fa}
-        .config-box{background:#f6f8fa;padding:20px;border-radius:6px;margin:20px 0;font-family:monospace;font-size:12px;white-space:pre-wrap;word-break:break-all}
-        .btn{display:inline-block;padding:8px 16px;background:#2ea44f;color:white;border:none;border-radius:6px;text-decoration:none;cursor:pointer;margin:5px}
-        .btn:hover{background:#2c974b}
-        .qrcode{text-align:center;margin:30px 0}
-        .qrcode img{border:2px solid #e1e4e8;border-radius:4px}
-        .info{background:#fff3cd;border:1px solid #ffc107;border-radius:4px;padding:15px;margin:20px 0}
-        .success{background:#d4edda;border:1px solid #28a745;border-radius:4px;padding:15px;margin:20px 0;display:none}
-        .debug{background:#f1f8ff;border:1px solid #2196f3;border-radius:4px;padding:15px;margin:20px 0;font-size:11px;font-family:monospace}
-        .map-types{background:#e3f2fd;border:1px solid #2196f3;border-radius:4px;padding:15px;margin:20px 0}
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 900px; margin: 0 auto; padding: 40px 20px; background: #f6f8fa; }
+        .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        h1 { color: #24292e; }
+        .version { background: #0366d6; color: white; padding: 5px 10px; border-radius: 4px; font-size: 14px; }
+        .config-box { background: #f6f8fa; padding: 20px; border-radius: 6px; margin: 20px 0; font-family: monospace; font-size: 13px; white-space: pre-wrap; word-break: break-all; border: 1px solid #dfe2e5; }
+        button { background: #2ea44f; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 16px; cursor: pointer; margin: 10px 5px; }
+        button:hover { background: #2c974b; }
+        button.secondary { background: #6a737d; }
+        .qrcode-section { text-align: center; margin: 30px 0; padding: 20px; background: #fafbfc; border-radius: 6px; display: none; }
+        .qrcode-img { max-width: 300px; border: 2px solid #e1e4e8; border-radius: 4px; }
+        .info { background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; padding: 15px; margin: 20px 0; }
+        .success { background: #d4edda; border: 1px solid #28a745; border-radius: 4px; padding: 15px; margin: 20px 0; display: none; }
+        .step { background: #e3f2fd; border: 1px solid #2196f3; border-radius: 4px; padding: 15px; margin: 15px 0; }
+        .debug { background: #f1f8ff; border: 1px solid #2196f3; border-radius: 4px; padding: 15px; margin: 20px 0; font-size: 11px; font-family: monospace; white-space: pre-wrap; }
     </style>
 </head>
 <body>
-    <div class="markdown-body" id="readme"></div>
-    <div class="success" id="successMsg">✅ 配置已复制到剪贴板！</div>
-    
-    <div style="text-align: center; margin: 30px 0;">
-        <button class="btn" onclick="copyConfig()">📋 复制 XML 配置</button>
-        <button class="btn" style="background:#6a737d" onclick="showQRCode()">📱 显示二维码</button>
-    </div>
-    
-    <div class="config-box" id="xmlConfig">
-Loading...
-    </div>
-    
-    <div class="qrcode" id="qrSection" style="display: none;">
-        <h2>📱 扫码导入配置</h2>
-        <img id="qrImage" alt="配置二维码">
-        <p><small>使用奥维地图扫码功能扫描此二维码</small></p>
-        <div class="debug" id="debugInfo" style="display:none;margin-top:15px;"></div>
+    <div class="container">
+        <h1>🗺️ 奥维地图 Google 源配置</h1>
+        <span class="version">v2.0.3 (2024-03-09)</span>
+        
+        <div class="info">
+            <strong>✨ 配置已优化：</strong><br>
+            • 自动检测并使用当前域名（去除协议前缀）<br>
+            • 支持卫星图、街道图、混合图<br>
+            • 参数格式：<code>/vt/lyrs=s@699&hl=zh-CN&gl=cn&src=app&x={$x}&y={$y}&z={$z}&s=</code>
+        </div>
+        
+        <div class="success" id="successMsg">✅ 配置已复制到剪贴板！</div>
+        
+        <div class="step">
+            <h3>📋 第一步：复制 XML 配置</h3>
+            <p>点击下方按钮复制完整配置：</p>
+            <button onclick="copyConfig()">📋 复制 XML 配置到剪贴板</button>
+        </div>
+        
+        <div class="config-box" id="xmlConfig">Loading...</div>
+        
+        <div class="step">
+            <h3>📱 第二步：选择导入方式</h3>
+            <button class="secondary" onclick="showQRCode()">📱 生成二维码（手机扫码导入）</button>
+        </div>
+        
+        <div class="qrcode-section" id="qrSection">
+            <h3>📱 扫码导入配置</h3>
+            <img id="qrImage" class="qrcode-img" alt="配置二维码">
+            <p><small>打开奥维地图 → 扫一扫 → 扫描此二维码</small></p>
+            <div class="debug" id="debugInfo" style="display:none"></div>
+        </div>
+        
+        <div class="step">
+            <h3>🚀 第三步：在奥维地图中导入</h3>
+            <ol>
+                <li>打开奥维地图电脑版或手机版</li>
+                <li>点击 <strong>系统设置</strong> → <strong>导入对象</strong></li>
+                <li>选择 <strong>"从文本导入"</strong></li>
+                <li>粘贴刚才复制的 XML 配置</li>
+                <li>确认导入</li>
+                <li>在图层列表中找到 <strong>"谷歌街道"</strong> 并启用</li>
+            </ol>
+        </div>
+        
+        <hr style="margin: 40px 0; border: none; border-top: 1px solid #e1e4e8;">
+        
+        <h3>ℹ️ 技术信息</h3>
+        <table style="width:100%; font-size:14px;">
+            <tr><th width="200">服务器地址</th><td id="hostInfo">-</td></tr>
+            <tr><th>URL 模板</th><td><code>/vt/lyrs=s@699&amp;hl=zh-CN&amp;gl=cn&amp;src=app&amp;x={$x}&amp;y={$y}&amp;z={$z}&amp;s=</code></td></tr>
+            <tr><th>支持的 lyrs</th><td>m (街道), s (卫星), y (混合)</td></tr>
+            <tr><th>最大缩放级别</th><td>28</td></tr>
+            <tr><th>坐标系</th><td>Mercator (Web Mercator)</td></tr>
+        </table>
     </div>
 
     <script>
-        // 获取当前 Worker 域名
-        const workerHost = window.location.origin || 'http://localhost:3000';
+        // ✅ 关键修复：获取纯主机名（不含协议）
+        const fullUrl = window.location.origin;
+        const urlObj = new URL(fullUrl);
+        const workerHost = urlObj.hostname;  // ✅ 只返回主机名，如 map.uiai.fun
         
-        // XML 配置模板 (注意：URL 是 /vt 不是 /maps/vt!)
+        // ✅ 使用用户验证成功的 URL 模板格式
+        const urlTemplate = '/vt/lyrs=s@699&hl=zh-CN&gl=cn&src=app&x={$x}&y={$y}&z={$z}&s=';
+        
+        // XML 配置模板
         const xmlTemplate = `<?xml version="1.0" encoding="UTF-8"?>
 <customMapSource>
   <mapID>203</mapID>
-  <name>谷歌街道</name>
+  <name>谷歌卫星</name>
   <version>0</version>
   <maxZoom>28</maxZoom>
   <coordType>Mercator</coordType>
@@ -66,23 +103,16 @@ Loading...
   <host>${workerHost}</host>
   <group>谷歌官方</group>
   <port>443</port>
-  <url>/vt?lyrs=m&x={$x}&y={$y}&z={$z}</url>
+  <url>${urlTemplate}</url>
 </customMapSource>`;
         
         // 显示 XML 配置
         document.getElementById('xmlConfig').textContent = xmlTemplate;
-        
-        // 读取 README.md
-        fetch('README.md').then(r=>r.text()).then(md=>{
-            document.getElementById('readme').innerHTML = marked.parse(md);
-        }).catch(err => {
-            document.getElementById('readme').innerHTML = '<h1>奥维地图 Google 源代理</h1><p>Cloudflare Worker 代理服务，解决 mt1.google.com 无法访问的问题。</p>';
-        });
+        document.getElementById('hostInfo').textContent = `https://${workerHost}`;
         
         // 复制配置
         function copyConfig() {
-            const text = xmlTemplate;
-            navigator.clipboard.writeText(text).then(() => {
+            navigator.clipboard.writeText(xmlTemplate).then(() => {
                 document.getElementById('successMsg').style.display = 'block';
                 setTimeout(() => {
                     document.getElementById('successMsg').style.display = 'none';
@@ -93,46 +123,39 @@ Loading...
             });
         }
         
-        // 显示二维码 - 修复版 (Base64 编码)
+        // 显示二维码
         function showQRCode() {
             try {
-                // 奥维二维码格式 - hn 和 ul 必须是 Base64 编码
-                const hnBase64 = btoa(workerHost);  // Base64 编码 Worker 域名
-                const urlTemplate = '/vt?lyrs=m&x={$x}&y={$y}&z={$z}';  // ✅ 注意这里是 /vt 不是 /maps/vt
-                const ulBase64 = btoa(urlTemplate);  // Base64 编码 URL 模板
+                // 奥维二维码格式 - Base64 编码
+                const hnBase64 = btoa(workerHost);
+                const ulBase64 = btoa(urlTemplate);
                 
                 const qrData = `ovobj?t=37&id=202&na=6auY5b635Y2r5pif5Zu_&po=0&vr=1&pn=1&mt=1&mf=3&hs=1&he=4&oy=1&df=211,16777215,211,16777215&hn=${hnBase64}&ul=${ulBase64}`;
                 
-                console.log('=== 二维码生成调试信息 ===');
-                console.log('Worker 主机:', workerHost);
-                console.log('hn (原始):', workerHost);
-                console.log('hn (Base64):', hnBase64);
-                console.log('ul (原始):', urlTemplate);
-                console.log('ul (Base64):', ulBase64);
-                console.log('完整二维码数据:', qrData);
+                console.log('=== QRCode Debug ===');
+                console.log('Worker Host:', workerHost);
+                console.log('hn (Base64):', hnBase64, '→ atob:', atob(hnBase64));
+                console.log('ul (Base64):', ulBase64, '→ atob:', atob(ulBase64));
+                console.log('Full QR Data:', qrData);
                 
                 // 显示调试信息
-                const debugHtml = `
-                    <strong>调试信息：</strong><br>
-                    Worker 地址：<code>${workerHost}</code><br>
-                    hn (Base64): <code>${hnBase64}</code><br>
-                    → 解码验证：<code>${atob(hnBase64)}</code><br>
-                    ul (Base64): <code>${ulBase64}</code><br>
-                    → 解码验证：<code>${atob(ulBase64)}</code><br>
-                    <hr>
-                    <strong>完整二维码数据：</strong><br>
-                    <code>${qrData}</code>
-                `;
-                document.getElementById('debugInfo').innerHTML = debugHtml;
+                document.getElementById('debugInfo').innerHTML = 
+                    '调试信息:\n' +
+                    'Worker 地址: ' + workerHost + '\n' +
+                    'hn (Base64): ' + hnBase64 + '\n' +
+                    '→ 解码: ' + atob(hnBase64) + '\n' +
+                    'ul (Base64): ' + ulBase64 + '\n' +
+                    '→ 解码: ' + atob(ulBase64) + '\n\n' +
+                    '完整二维码数据:\n' + qrData;
                 document.getElementById('debugInfo').style.display = 'block';
                 
                 const qrUrl = `https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=${encodeURIComponent(qrData)}`;
                 document.getElementById('qrImage').src = qrUrl;
                 document.getElementById('qrSection').style.display = 'block';
                 
-                alert('✅ 二维码已生成！\n\n请在控制台 (F12) 查看详细参数\n扫描二维码即可导入奥维地图');
+                alert('✅ 二维码已生成！\n\n请在控制台 (F12) 查看详细参数\n打开手机奥维地图扫码即可导入');
             } catch (err) {
-                alert('❌ 生成二维码失败：' + err.message);
+                alert('❌ 生成失败：' + err.message);
                 console.error(err);
             }
         }
